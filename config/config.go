@@ -129,6 +129,11 @@ type Config struct {
 		AdminUID        string //系统管理员账号
 	}
 
+	// ---------- 企业系统配置 ----------
+	Business struct {
+		Tokens []string // 企业系统访问token列表
+	}
+
 	// ---------- 文件服务 ----------
 
 	FileService FileService   // 文件服务
@@ -227,7 +232,7 @@ type Config struct {
 	}
 	// ---------- push ----------
 	Push struct {
-		ContentDetailOn bool         //  推送是否显示正文详情(如果为false，则只显示“您有一条新的消息” 默认为true)
+		ContentDetailOn bool         //  推送是否显示正文详情(如果为false，则只显示"您有一条新的消息" 默认为true)
 		PushPoolSize    int64        // 推送任务池大小
 		APNS            APNSPush     // 苹果推送
 		MI              MIPush       // 小米推送
@@ -284,7 +289,7 @@ func New() *Config {
 		// ---------- 基础配置 ----------
 		Mode:                        ReleaseMode,
 		AppID:                       "tangsengdaodao",
-		AppName:                     "唐僧叨叨",
+		AppName:                     "IM App",
 		Addr:                        ":8090",
 		GRPCAddr:                    "0.0.0.0:6979",
 		PhoneSearchOff:              false,
@@ -511,6 +516,13 @@ func New() *Config {
 		TimingWheelSize:      100,
 		TablePartitionConfig: newTablePartitionConfig(),
 		ElasticsearchURL:     "http://elasticsearch:9200",
+
+		// ---------- 企业系统配置 ----------
+		Business: struct {
+			Tokens []string
+		}{
+			Tokens: []string{"default_token"},
+		},
 	}
 
 	return cfg
@@ -520,24 +532,24 @@ func (c *Config) ConfigureWithViper(vp *viper.Viper) {
 	c.vp = vp
 	intranetIP := getIntranetIP() // 内网IP
 	// #################### 基础配置 ####################
-	c.Mode = Mode(c.getString("mode", string(DebugMode)))
-	c.AppID = c.getString("appID", c.AppID)
-	c.AppName = c.getString("appName", c.AppName)
-	c.RootDir = c.getString("rootDir", c.RootDir)
+	c.Mode = Mode(c.getString("mode", string(c.Mode)))
+	c.AppID = c.getString("appid", c.AppID)
+	c.AppName = c.getString("appname", c.AppName)
+	c.RootDir = c.getString("rootdir", c.RootDir)
 	c.Version = c.getString("version", c.Version)
 	c.Addr = c.getString("addr", c.Addr)
-	c.GRPCAddr = c.getString("grpcAddr", c.GRPCAddr)
-	c.SSLAddr = c.getString("sslAddr", c.SSLAddr)
-	c.MessageSaveAcrossDevice = c.getBool("messageSaveAcrossDevice", c.MessageSaveAcrossDevice)
-	c.WelcomeMessage = c.getString("welcomeMessage", c.WelcomeMessage)
+	c.GRPCAddr = c.getString("grpcaddr", c.GRPCAddr)
+	c.SSLAddr = c.getString("ssladdr", c.SSLAddr)
+	c.MessageSaveAcrossDevice = c.getBool("messagesaveacrossdevice", c.MessageSaveAcrossDevice)
+	c.WelcomeMessage = c.getString("welcomemessage", c.WelcomeMessage)
 	if strings.TrimSpace(c.WelcomeMessage) != "" {
 		c.WelcomeMessage = strings.ReplaceAll(c.WelcomeMessage, "{{appName}}", c.AppName)
 	}
-	c.PhoneSearchOff = c.getBool("phoneSearchOff", c.PhoneSearchOff)
-	c.OnlineStatusOn = c.getBool("onlineStatusOn", c.OnlineStatusOn)
-	c.GroupUpgradeWhenMemberCount = c.getInt("groupUpgradeWhenMemberCount", c.GroupUpgradeWhenMemberCount)
-	c.EventPoolSize = c.getInt64("eventPoolSize", c.EventPoolSize)
-	c.AdminPwd = c.getString("adminPwd", c.AdminPwd)
+	c.PhoneSearchOff = c.getBool("phonesearchoff", c.PhoneSearchOff)
+	c.OnlineStatusOn = c.getBool("onlinestatuson", c.OnlineStatusOn)
+	c.GroupUpgradeWhenMemberCount = c.getInt("groupupgradewhenmembercount", c.GroupUpgradeWhenMemberCount)
+	c.EventPoolSize = c.getInt64("eventpoolsize", c.EventPoolSize)
+	c.AdminPwd = c.getString("adminpwd", c.AdminPwd)
 
 	// #################### 外网配置 ####################
 	c.External.IP = c.getString("external.ip", c.External.IP)
@@ -758,6 +770,10 @@ func (c *Config) ConfigureWithViper(vp *viper.Viper) {
 	c.Support.EmailSmtp = c.getString("support.emailSmtp", c.Support.EmailSmtp)
 	c.Support.EmailPwd = c.getString("support.emailPwd", c.Support.EmailPwd)
 
+	// #################### 企业系统配置 ####################
+	if vp.IsSet("business.tokens") {
+		c.Business.Tokens = vp.GetStringSlice("business.tokens")
+	}
 }
 
 func (c *Config) ConfigFileUsed() string {

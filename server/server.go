@@ -57,6 +57,12 @@ func (s *Server) run(sslAddr string, addr ...string) error {
 	})
 
 	s.r.Any("/swagger/:module", func(c *wkhttp.Context) {
+		// 检查是否为debug模式
+		if s.ctx.GetConfig().Mode != "debug" {
+			c.Status(http.StatusForbidden)
+			c.String(http.StatusForbidden, "Swagger is only available in debug mode")
+			return
+		}
 		m := c.Param("module")
 		module := register.GetModuleByName(m, s.ctx)
 		if strings.TrimSpace(module.Swagger) == "" {
@@ -64,7 +70,6 @@ func (s *Server) run(sslAddr string, addr ...string) error {
 			return
 		}
 		c.String(http.StatusOK, module.Swagger)
-
 	})
 
 	if len(addr) != 0 {
